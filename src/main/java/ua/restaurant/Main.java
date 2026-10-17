@@ -1,15 +1,19 @@
 package ua.restaurant;
 
+import ua.restaurant.loader.RoomLoader;
 import ua.restaurant.model.Customer;
 import ua.restaurant.model.Reservation;
 import ua.restaurant.model.ReservationStatus;
 import ua.restaurant.model.RestaurantOrder;
 import ua.restaurant.model.RestaurantTable;
+import ua.restaurant.model.Room;
 import ua.restaurant.model.TableZone;
 import ua.restaurant.util.RestaurantUtils;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 public class Main {
 
@@ -140,11 +144,11 @@ public class Main {
                 "sofia",
                 "Sofia@EXAMPLE.COM"
         );
-
         System.out.println(
                 "customer == sameCustomer: "
                         + (customer == sameCustomer)
         );
+
         System.out.println(
                 "customer.equals(sameCustomer): "
                         + customer.equals(sameCustomer)
@@ -208,5 +212,43 @@ public class Main {
                     "Invalid discount: " + e.getMessage()
             );
         }
+
+        System.out.println();
+
+        // 10. Loading rooms from CSV
+
+        System.out.println("=== CSV ROOMS ===");
+
+        RoomLoader loader = new RoomLoader();
+
+        List<Room> rooms = loader.load(
+                Path.of("data", "rooms.csv")
+        );
+
+        System.out.println(
+                "Завантажено кімнат: " + rooms.size()
+        );
+
+        for (Room room : rooms) {
+            System.out.println(
+                    "Кімната " + room.roomNumber()
+                            + ", тип: " + room.type()
+                            + ", ціна: " + room.pricePerNight()
+            );
+        }
+
+        System.out.println();
+
+        // 11. Loading a missing file
+
+        System.out.println("=== MISSING FILE ===");
+
+        loader.load(
+                Path.of("data", "missing-rooms.csv")
+        );
+
+        System.out.println(
+                "Програму не завершено після спроби прочитати відсутній файл."
+        );
     }
 }
