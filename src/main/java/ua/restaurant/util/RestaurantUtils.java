@@ -1,7 +1,9 @@
 package ua.restaurant.util;
 
 import ua.restaurant.model.Reservation;
+import ua.restaurant.model.ReservationStatus;
 import ua.restaurant.model.RestaurantOrder;
+import ua.restaurant.model.TableZone;
 
 import java.time.Duration;
 
@@ -60,5 +62,24 @@ public final class RestaurantUtils {
         requireNotNull(order, "Order");
 
         return order.getTotalAmount() - order.getDiscountAmount();
+    }
+
+    public static String zoneDescription(TableZone zone) {
+        return switch (zone) {
+            case MAIN_HALL -> "Main hall";
+            case TERRACE -> "Terrace";
+            case VIP -> "VIP zone";
+            case BAR -> "Bar";
+        };
+    }
+
+    public static String availableAction(ReservationStatus status) {
+        return switch (status) {
+            case PENDING -> "Confirm reservation";
+            case CONFIRMED -> "Seat customer";
+            case SEATED -> "Complete reservation";
+            case COMPLETED -> "No action";
+            case CANCELLED -> "No action";
+        };
     }
 }

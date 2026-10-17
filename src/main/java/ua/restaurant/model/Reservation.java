@@ -11,19 +11,13 @@ public class Reservation extends BaseEntity {
 
     static final int MIN_GUEST_COUNT = 1;
 
-    static final String PENDING = "PENDING";
-    static final String CONFIRMED = "CONFIRMED";
-    static final String SEATED = "SEATED";
-    static final String COMPLETED = "COMPLETED";
-    static final String CANCELLED = "CANCELLED";
-
     private final Customer customer;
     private final RestaurantTable table;
     private final LocalDate reservationDate;
     private final LocalTime startTime;
     private final LocalTime endTime;
     private final int guestCount;
-    private String status;
+    private ReservationStatus status;
 
     public Reservation(
             Customer customer,
@@ -32,7 +26,7 @@ public class Reservation extends BaseEntity {
             LocalTime startTime,
             LocalTime endTime,
             int guestCount,
-            String status
+            ReservationStatus status
     ) {
         super();
 
@@ -64,13 +58,13 @@ public class Reservation extends BaseEntity {
         }
 
         if (guestCount < MIN_GUEST_COUNT
-                || guestCount > table.getCapacity()) {
+                || guestCount > table.capacity()) {
 
             throw new IllegalArgumentException(
                     "Guest count must be between "
                             + MIN_GUEST_COUNT
                             + " and "
-                            + table.getCapacity()
+                            + table.capacity()
                             + ", got: "
                             + guestCount
             );
@@ -105,29 +99,15 @@ public class Reservation extends BaseEntity {
         return guestCount;
     }
 
-    public String getStatus() {
+    public ReservationStatus getStatus() {
         return status;
     }
 
-    public final void setStatus(String status) {
-        String normalizedStatus = RestaurantUtils.normalizeUpperCase(
-                RestaurantUtils.requireNotBlank(status, "Status")
+    public final void setStatus(ReservationStatus status) {
+        this.status = RestaurantUtils.requireNotNull(
+                status,
+                "Status"
         );
-
-        if (!normalizedStatus.equals(PENDING)
-                && !normalizedStatus.equals(CONFIRMED)
-                && !normalizedStatus.equals(SEATED)
-                && !normalizedStatus.equals(COMPLETED)
-                && !normalizedStatus.equals(CANCELLED)) {
-
-            throw new IllegalArgumentException(
-                    "Status must be one of PENDING, CONFIRMED, "
-                            + "SEATED, COMPLETED, CANCELLED, got: "
-                            + status
-            );
-        }
-
-        this.status = normalizedStatus;
     }
 
     @Override
@@ -147,6 +127,7 @@ public class Reservation extends BaseEntity {
                 && reservationDate.equals(that.reservationDate)
                 && startTime.equals(that.startTime);
     }
+
     @Override
     public int hashCode() {
         return Objects.hash(
@@ -166,7 +147,7 @@ public class Reservation extends BaseEntity {
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +
                 ", guestCount=" + guestCount +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 ", createdAt=" + createdAt +
                 '}';
     }

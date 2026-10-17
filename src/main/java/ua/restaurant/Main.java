@@ -2,8 +2,10 @@ package ua.restaurant;
 
 import ua.restaurant.model.Customer;
 import ua.restaurant.model.Reservation;
+import ua.restaurant.model.ReservationStatus;
 import ua.restaurant.model.RestaurantOrder;
 import ua.restaurant.model.RestaurantTable;
+import ua.restaurant.model.TableZone;
 import ua.restaurant.util.RestaurantUtils;
 
 import java.time.LocalDate;
@@ -13,7 +15,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        // 1. Creating objects using a factory method and a constructor
+        // 1. Creating objects using record and enum
 
         Customer customer = Customer.of(
                 " +380671234567 ",
@@ -24,7 +26,7 @@ public class Main {
         RestaurantTable table = new RestaurantTable(
                 15,
                 4,
-                " terrace "
+                TableZone.TERRACE
         );
 
         Reservation reservation = new Reservation(
@@ -34,7 +36,7 @@ public class Main {
                 LocalTime.of(18, 0),
                 LocalTime.of(20, 30),
                 3,
-                " pending "
+                ReservationStatus.PENDING
         );
 
         RestaurantOrder order = RestaurantOrder.of(
@@ -44,73 +46,94 @@ public class Main {
                 150.0
         );
 
-        // 2. Normalization
+        // 2. Record component access
 
-        System.out.println("=== NORMALIZATION ===");
-        System.out.println("Customer name: " + customer.getName());
-        System.out.println("Customer email: " + customer.getEmail());
-        System.out.println("Table zone: " + table.getZone());
-        System.out.println("Reservation status: " + reservation.getStatus());
+        System.out.println("=== RECORD COMPONENTS ===");
+        System.out.println("Customer phone: " + customer.phone());
+        System.out.println("Customer name: " + customer.name());
+        System.out.println("Customer email: " + customer.email());
+
+        System.out.println("Table number: " + table.tableNumber());
+        System.out.println("Table capacity: " + table.capacity());
+        System.out.println("Table zone: " + table.zone());
         System.out.println();
 
-        // 3. Invalid cases
+        // 3. Enum values(), field and valueOf()
 
-        System.out.println("=== INVALID CASES ===");
+        System.out.println("=== ENUM ===");
 
-        try {
-            Customer.of("", "Test", "test@example.com");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid phone: " + e.getMessage());
+        System.out.println("Reservation statuses:");
+
+        for (ReservationStatus status : ReservationStatus.values()) {
+            System.out.println(status);
         }
-
-        try {
-            new RestaurantTable(0, 4, "VIP");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid table: " + e.getMessage());
-        }
-
-        try {
-            new Reservation(
-                    customer,
-                    table,
-                    LocalDate.of(2026, 9, 25),
-                    LocalTime.of(20, 0),
-                    LocalTime.of(19, 0),
-                    2,
-                    "CONFIRMED"
-            );
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid time: " + e.getMessage());
-        }
-
-        // 4. Setter validation
-
-        System.out.println();
-        System.out.println("=== SETTER VALIDATION ===");
-
-        reservation.setStatus(" confirmed ");
 
         System.out.println(
-                "Status after valid setter: "
-                        + reservation.getStatus()
+                "Terrace price coefficient: "
+                        + TableZone.TERRACE.getPriceCoefficient()
         );
 
         try {
-            reservation.setStatus("UNKNOWN");
+            ReservationStatus.valueOf("UNKNOWN");
         } catch (IllegalArgumentException e) {
-            System.out.println("Invalid status: " + e.getMessage());
+            System.out.println(
+                    "Invalid enum value: " + e.getMessage()
+            );
+        }
+
+        System.out.println();
+
+        // 4. Switch expressions
+
+        System.out.println("=== SWITCH EXPRESSIONS ===");
+
+        System.out.println(
+                "Zone description: "
+                        + RestaurantUtils.zoneDescription(table.zone())
+        );
+
+        System.out.println(
+                "Available action: "
+                        + RestaurantUtils.availableAction(
+                                reservation.getStatus()
+                        )
+        );
+
+        System.out.println();
+
+        // 5. Invalid record data
+
+        System.out.println("=== INVALID RECORD DATA ===");
+
+        try {
+            Customer.of(
+                    "",
+                    "Test",
+                    "test@example.com"
+            );
+        } catch (IllegalArgumentException e) {
+            System.out.println(
+                    "Invalid Customer: " + e.getMessage()
+            );
         }
 
         try {
-            order.setDiscountAmount(2000.0);
+            new RestaurantTable(
+                    0,
+                    4,
+                    TableZone.VIP
+            );
         } catch (IllegalArgumentException e) {
-            System.out.println("Invalid discount: " + e.getMessage());
+            System.out.println(
+                    "Invalid RestaurantTable: " + e.getMessage()
+            );
         }
 
-        // 5. == versus equals()
-
         System.out.println();
-        System.out.println("=== == VS EQUALS ===");
+
+        // 6. Two equal record objects
+
+        System.out.println("=== RECORD EQUALS AND HASHCODE ===");
 
         Customer sameCustomer = Customer.of(
                 " +380671234567 ",
@@ -118,26 +141,15 @@ public class Main {
                 "Sofia@EXAMPLE.COM"
         );
 
-        Customer differentCustomer = Customer.of(
-                " +380991112233 ",
-                "Different name",
-                "different@example.com"
-        );
-
         System.out.println(
                 "customer == sameCustomer: "
                         + (customer == sameCustomer)
         );
-
         System.out.println(
                 "customer.equals(sameCustomer): "
                         + customer.equals(sameCustomer)
         );
 
-        System.out.println(
-                "customer.equals(differentCustomer): "
-                        + customer.equals(differentCustomer)
-        );
         System.out.println(
                 "customer.hashCode(): "
                         + customer.hashCode()
@@ -148,9 +160,19 @@ public class Main {
                         + sameCustomer.hashCode()
         );
 
-        // 6. Computed methods
+        System.out.println();
+
+        // 7. Generated record toString()
+
+        System.out.println("=== RECORD TOSTRING ===");
+
+        System.out.println(customer);
+        System.out.println(table);
 
         System.out.println();
+
+        // 8. Existing computed methods
+
         System.out.println("=== COMPUTED METHODS ===");
 
         System.out.println(
@@ -166,18 +188,25 @@ public class Main {
                         )
         );
 
-        // 7. toString() for all entities
-
         System.out.println();
-        System.out.println("=== TOSTRING ===");
 
-        System.out.println(customer);
-        System.out.println(table);
-        System.out.println(reservation);
-        System.out.println(order);
+        // 9. Mutable fields in regular classes
 
-        // 8. Access restrictions.
-        // ValidationHelper is package-private and cannot be accessed here.
-        // customer.phone = "123"; // phone is private and cannot be accessed here.
+        System.out.println("=== MUTABLE FIELDS ===");
+
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+
+        System.out.println(
+                "Status after setter: "
+                        + reservation.getStatus()
+        );
+
+        try {
+            order.setDiscountAmount(2000.0);
+        } catch (IllegalArgumentException e) {
+            System.out.println(
+                    "Invalid discount: " + e.getMessage()
+            );
+        }
     }
 }
