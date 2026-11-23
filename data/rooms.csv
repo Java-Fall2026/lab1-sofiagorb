@@ -1,0 +1,7 @@
+roomNumber,type,pricePerNight
+101,SINGLE,850.0
+102,DELUXE,2400.0
+abc,DOUBLE,1200.0
+103,UNKNOWN,1300.0
+104,SINGLE,not-a-number
+105,DOUBLE
