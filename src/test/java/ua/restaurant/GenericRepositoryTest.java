@@ -3,6 +3,7 @@ package ua.restaurant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ua.restaurant.exception.DuplicateIdentityException;
 import ua.restaurant.model.Customer;
 import ua.restaurant.model.Reservation;
 import ua.restaurant.model.ReservationStatus;
@@ -21,13 +22,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("GenericRepository and Collections tests")
 class GenericRepositoryTest {
 
-    private GenericRepository<Customer, String> customerRepo;
-    private GenericRepository<RestaurantTable, Integer> tableRepo;
+    private GenericRepository<Customer> customerRepo;
+    private GenericRepository<RestaurantTable> tableRepo;
 
     @BeforeEach
     void setUp() {
-        customerRepo = new GenericRepository<>(Customer::phone, "Customer");
-        tableRepo = new GenericRepository<>(RestaurantTable::tableNumber, "RestaurantTable");
+        customerRepo = new GenericRepository<>("Customer", Customer::phone);
+        tableRepo = new GenericRepository<>("RestaurantTable", t -> String.valueOf(t.tableNumber()));
     }
 
     @Test
@@ -36,25 +37,63 @@ class GenericRepositoryTest {
         Customer customer = Customer.of("+380671112233", "Olena", "olena@test.com");
         RestaurantTable table = new RestaurantTable(5, 4, TableZone.MAIN_HALL);
 
-        assertTrue(customerRepo.add(customer));
-        assertTrue(tableRepo.add(table));
+        customerRepo.add(customer);
+        tableRepo.add(table);
 
         assertEquals(1, customerRepo.size());
         assertEquals(1, tableRepo.size());
-        assertEquals(customer, customerRepo.getAll().get(0));
-        assertEquals(table, tableRepo.getAll().get(0));
+        assertEquals(customer, customerRepo.findAll().get(0));
+        assertEquals(table, tableRepo.findAll().get(0));
     }
 
     @Test
-    @DisplayName("Should reject duplicate entities with the same identity")
-    void shouldRejectDuplicates() {
+    @DisplayName("Should throw DuplicateIdentityException on add() with duplicate identity")
+    void shouldThrowOnDuplicateAdd() {
         Customer first = Customer.of("+380671112233", "Olena", "olena@test.com");
         Customer duplicate = Customer.of("+380671112233", "Iryna", "iryna@test.com");
 
-        assertTrue(customerRepo.add(first));
-        assertFalse(customerRepo.add(duplicate));
+        customerRepo.add(first);
+
+        DuplicateIdentityException exception = assertThrows(
+                DuplicateIdentityException.class,
+                () -> customerRepo.add(duplicate)
+        );
+        assertTrue(exception.getMessage().contains("+380671112233"));
+        assertTrue(exception.getMessage().contains("Customer"));
+        assertEquals(1, customerRepo.size());
+    }
+
+    @Test
+    @DisplayName("Should return false and not change size on addIfAbsent() with duplicate")
+    void shouldReturnFalseOnDuplicateAddIfAbsent() {
+        Customer first = Customer.of("+380671112233", "Olena", "olena@test.com");
+        Customer duplicate = Customer.of("+380671112233", "Iryna", "iryna@test.com");
+
+        assertTrue(customerRepo.addIfAbsent(first));
+        assertFalse(customerRepo.addIfAbsent(duplicate));
         assertEquals(1, customerRepo.size());
         assertEquals("Olena", customerRepo.findByIdentity("+380671112233").orElseThrow().name());
+    }
+
+    @Test
+    @DisplayName("Should throw IllegalArgumentException when adding null item or blank identity")
+    void shouldThrowIllegalArgumentExceptionForNullOrBlank() {
+        assertThrows(IllegalArgumentException.class, () -> customerRepo.add(null));
+        assertThrows(IllegalArgumentException.class, () -> customerRepo.addIfAbsent(null));
+
+        GenericRepository<String> badRepo = new GenericRepository<>("BadRepo", s -> "   ");
+        assertThrows(IllegalArgumentException.class, () -> badRepo.add("value"));
+    }
+
+    @Test
+    @DisplayName("Should add all elements from collection via addAll()")
+    void shouldAddAllFromCollection() {
+        RestaurantTable t1 = new RestaurantTable(1, 2, TableZone.BAR);
+        RestaurantTable t2 = new RestaurantTable(2, 4, TableZone.TERRACE);
+
+        tableRepo.addAll(List.of(t1, t2));
+
+        assertEquals(2, tableRepo.size());
     }
 
     @Test
@@ -62,9 +101,8 @@ class GenericRepositoryTest {
     void shouldFindByIdentity() {
         RestaurantTable table = new RestaurantTable(12, 6, TableZone.VIP);
         tableRepo.add(table);
-
-        Optional<RestaurantTable> found = tableRepo.findByIdentity(12);
-        Optional<RestaurantTable> notFound = tableRepo.findByIdentity(99);
+        Optional<RestaurantTable> found = tableRepo.findByIdentity("12");
+        Optional<RestaurantTable> notFound = tableRepo.findByIdentity("99");
 
         assertTrue(found.isPresent());
         assertEquals(TableZone.VIP, found.get().zone());
@@ -72,15 +110,16 @@ class GenericRepositoryTest {
     }
 
     @Test
-    @DisplayName("Should remove entity by identity or object reference")
-    void shouldRemoveEntity() {
+    @DisplayName("Should remove existing entity and return false when removing non-existent entity")
+    void shouldRemoveExistingAndHandleMissing() {
         RestaurantTable table1 = new RestaurantTable(1, 2, TableZone.BAR);
         RestaurantTable table2 = new RestaurantTable(2, 4, TableZone.TERRACE);
         tableRepo.add(table1);
         tableRepo.add(table2);
 
-        assertTrue(tableRepo.removeByIdentity(1));
-        assertFalse(tableRepo.removeByIdentity(1));
+        assertTrue(tableRepo.removeByIdentity("1"));
+        assertFalse(tableRepo.removeByIdentity("1"));
+        assertFalse(tableRepo.removeByIdentity("999"));
         assertEquals(1, tableRepo.size());
 
         assertTrue(tableRepo.remove(table2));
@@ -88,12 +127,12 @@ class GenericRepositoryTest {
     }
 
     @Test
-    @DisplayName("Should return unmodifiable collection from getAll()")
+    @DisplayName("Should return unmodifiable collection from findAll()")
     void shouldReturnUnmodifiableList() {
         Customer customer = Customer.of("+380671112233", "Olena", "olena@test.com");
         customerRepo.add(customer);
 
-        List<Customer> all = customerRepo.getAll();
+        List<Customer> all = customerRepo.findAll();
 
         assertThrows(UnsupportedOperationException.class, () -> all.add(customer));
     }
@@ -108,10 +147,10 @@ class GenericRepositoryTest {
         );
         RestaurantOrder order = RestaurantOrder.of("ORD-100", reservation, 500.0, 50.0);
 
-        GenericRepository<RestaurantOrder, String> orderRepo =
-                new GenericRepository<>(RestaurantOrder::getOrderId, "RestaurantOrder");
+        GenericRepository<RestaurantOrder> orderRepo =
+                new GenericRepository<>("RestaurantOrder", RestaurantOrder::getOrderId);
 
-        assertTrue(orderRepo.add(order));
+        orderRepo.add(order);
         assertTrue(orderRepo.findByIdentity("ORD-100").isPresent());
     }
 }

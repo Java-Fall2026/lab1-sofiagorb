@@ -1,5 +1,6 @@
 package ua.restaurant;
 
+import ua.restaurant.exception.DuplicateIdentityException;
 import ua.restaurant.loader.TableLoader;
 import ua.restaurant.model.Customer;
 import ua.restaurant.model.Reservation;
@@ -14,7 +15,6 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 
 public class Main {
 
@@ -24,7 +24,7 @@ public class Main {
         Customer customer = Customer.of(
                 " +380671234567 ",
                 "sofia",
-                "sofia@EXAMPLE.COM"
+                "Sofia@Example.com"
         );
 
         RestaurantTable table = new RestaurantTable(
@@ -36,17 +36,17 @@ public class Main {
         Reservation reservation = new Reservation(
                 customer,
                 table,
-                LocalDate.of(2026, 9, 25),
+                LocalDate.now(),
                 LocalTime.of(18, 0),
-                LocalTime.of(20, 30),
-                3,
+                LocalTime.of(20, 0),
+                4,
                 ReservationStatus.PENDING
         );
 
         RestaurantOrder order = RestaurantOrder.of(
                 "ORD-501",
                 reservation,
-                1200.0,
+                1250.0,
                 150.0
         );
 
@@ -55,7 +55,6 @@ public class Main {
         System.out.println("Customer phone: " + customer.phone());
         System.out.println("Customer name: " + customer.name());
         System.out.println("Customer email: " + customer.email());
-
         System.out.println("Table number: " + table.tableNumber());
         System.out.println("Table capacity: " + table.capacity());
         System.out.println("Table zone: " + table.zone());
@@ -67,7 +66,6 @@ public class Main {
         for (ReservationStatus status : ReservationStatus.values()) {
             System.out.println(status);
         }
-
         System.out.println("Terrace price coefficient: " + TableZone.TERRACE.getPriceCoefficient());
 
         try {
@@ -134,10 +132,7 @@ public class Main {
         System.out.println("=== CSV TABLES ===");
         TableLoader loader = new TableLoader();
         List<RestaurantTable> loadedTables = loader.load(Path.of("data", "tables.csv"));
-        System.out.println("Завантажено столиків: " + loadedTables.size());
-        for (RestaurantTable t : loadedTables) {
-            System.out.println("Столик №" + t.tableNumber() + ", місць: " + t.capacity() + ", зона: " + t.zone());
-        }
+        System.out.println("Завантажено рядків столиків із CSV: " + loadedTables.size());
         System.out.println();
 
         // 11. Loading a missing file (Lab 3)
@@ -147,41 +142,77 @@ public class Main {
         System.out.println();
 
         // 12. GenericRepository demonstration (Lab 4)
-        System.out.println("=== GENERIC REPOSITORY (КЛІЄНТИ) ===");
-        GenericRepository<Customer, String> customerRepo =
-                new GenericRepository<>(Customer::phone, "Customer");
+        System.out.println("=== РЕПОЗИТОРІЙ 1: КЛІЄНТИ (Customer) ===");
+        GenericRepository<Customer> customerRepo = new GenericRepository<>("Customer", Customer::phone);
+        Customer customer2 = Customer.of("+380509876543", "Andrii", "andrii@example.com");
 
-        Customer customer2 = Customer.of(" +380509876543 ", "andrii", "andrii@example.com");
         customerRepo.add(customer);
         customerRepo.add(customer2);
 
-        Optional<Customer> foundCustomer = customerRepo.findByIdentity("+380671234567");
-        foundCustomer.ifPresent(c -> System.out.println("Знайдено клієнта: " + c.name()));
+        // Пошук: знайдено та не знайдено
+        System.out.println("Пошук наявного клієнта: " + customerRepo.findByIdentity("+380671234567").isPresent());
+        System.out.println("Пошук відсутнього клієнта: " + customerRepo.findByIdentity("+380000000000").isPresent());
 
+        // Дублікат через add() у try/catch поруч із addIfAbsent()
         Customer duplicateCustomer = Customer.of("+380671234567", "Інша Софія", "other@example.com");
-        System.out.println("Чи додано дублікат клієнта: " + customerRepo.add(duplicateCustomer));
-        System.out.println("Усього клієнтів у репозиторії: " + customerRepo.size());
+        try {
+            customerRepo.add(duplicateCustomer);
+        } catch (DuplicateIdentityException e) {
+            System.out.println("Спіймано виключення при add(): " + e.getMessage());
+        }
+        boolean addedIfAbsent = customerRepo.addIfAbsent(duplicateCustomer);
+        System.out.println("Результат addIfAbsent() для дубліката: " + addedIfAbsent);
+
+        // Видалення наявного та відсутнього елемента
+        System.out.println("Видалення наявного клієнта: " + customerRepo.removeByIdentity("+380509876543"));
+        System.out.println("Видалення відсутнього клієнта: " + customerRepo.removeByIdentity("+380509876543"));
+        System.out.println("Усього клієнтів у репозиторії: " + customerRepo.findAll().size());
         System.out.println();
 
-        System.out.println("=== GENERIC REPOSITORY (СТОЛИКИ ТА ЗАМОВЛЕННЯ) ===");
-        GenericRepository<RestaurantTable, Integer> tableRepo =
-                new GenericRepository<>(RestaurantTable::tableNumber, "RestaurantTable");
+        System.out.println("=== РЕПОЗИТОРІЙ 2: СТОЛИКИ (RestaurantTable + CSV) ===");
+        GenericRepository<RestaurantTable> tableRepo =
+                new GenericRepository<>("RestaurantTable", t -> String.valueOf(t.tableNumber()));
+
+        // Додавання з CSV (де є дублікат столика №1)
         for (RestaurantTable t : loadedTables) {
-            tableRepo.add(t);
+            try {
+                tableRepo.add(t);
+            } catch (DuplicateIdentityException e) {
+                System.out.println("Дублікат із CSV при add(): " + e.getMessage());
+            }
         }
-        tableRepo.add(table);
+        tableRepo.addIfAbsent(table);
+        // Пошук: знайдено та не знайдено
+        System.out.println("Пошук столика №15: " + tableRepo.findByIdentity("15").isPresent());
+        System.out.println("Пошук столика №999: " + tableRepo.findByIdentity("999").isPresent());
 
-        RestaurantTable duplicateTable = new RestaurantTable(15, 6, TableZone.VIP);
-        System.out.println("Чи додано дублікат столика №15: " + tableRepo.add(duplicateTable));
-        tableRepo.findByIdentity(15).ifPresent(t ->
-                System.out.println("Знайдено столик №15: зона " + t.zone() + ", місць " + t.capacity())
-        );
+        // Видалення наявного та відсутнього елемента
+        System.out.println("Видалення столика №2: " + tableRepo.removeByIdentity("2"));
+        System.out.println("Повторне видалення столика №2: " + tableRepo.removeByIdentity("2"));
+        System.out.println();
 
-        GenericRepository<RestaurantOrder, String> orderRepo =
-                new GenericRepository<>(RestaurantOrder::getOrderId, "RestaurantOrder");
+        System.out.println("=== РЕПОЗИТОРІЙ 3: ЗАМОВЛЕННЯ (RestaurantOrder) ===");
+        GenericRepository<RestaurantOrder> orderRepo =
+                new GenericRepository<>("RestaurantOrder", RestaurantOrder::getOrderId);
+
         orderRepo.add(order);
-        orderRepo.findByIdentity("ORD-501").ifPresent(o ->
-                System.out.println("Знайдено замовлення: " + o.getOrderId())
-        );
+        RestaurantOrder order2 = RestaurantOrder.of("ORD-502", reservation, 800.0, 0.0);
+        orderRepo.addAll(List.of(order2));
+
+        // Пошук: знайдено та не знайдено
+        System.out.println("Пошук замовлення ORD-501: " + orderRepo.findByIdentity("ORD-501").isPresent());
+        System.out.println("Пошук замовлення ORD-999: " + orderRepo.findByIdentity("ORD-999").isPresent());
+
+        // Дублікат: add() vs addIfAbsent()
+        try {
+            orderRepo.add(order);
+        } catch (DuplicateIdentityException e) {
+            System.out.println("Спіймано виключення при add(): " + e.getMessage());
+        }
+        System.out.println("Результат addIfAbsent() для дубліката замовлення: " + orderRepo.addIfAbsent(order));
+
+        // Видалення наявного та відсутнього елемента
+        System.out.println("Видалення ORD-502: " + orderRepo.removeByIdentity("ORD-502"));
+        System.out.println("Видалення відсутнього ORD-777: " + orderRepo.removeByIdentity("ORD-777"));
     }
 }
