@@ -1,218 +1,127 @@
 package ua.restaurant;
 
-import ua.restaurant.exception.DuplicateIdentityException;
-import ua.restaurant.loader.TableLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ua.restaurant.model.Customer;
 import ua.restaurant.model.Reservation;
 import ua.restaurant.model.ReservationStatus;
 import ua.restaurant.model.RestaurantOrder;
 import ua.restaurant.model.RestaurantTable;
 import ua.restaurant.model.TableZone;
-import ua.restaurant.repository.GenericRepository;
-import ua.restaurant.util.RestaurantUtils;
+import ua.restaurant.repository.CustomerRepository;
+import ua.restaurant.repository.RestaurantOrderRepository;
+import ua.restaurant.repository.SortOrder;
 
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Stream;
 
 public class Main {
 
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) {
+        log.info("Starting Lab 5 demonstration");
 
-        // 1. Creating objects using record and enum
-        Customer customer = Customer.of(
-                " +380671234567 ",
-                "sofia",
-                "Sofia@Example.com"
+        CustomerRepository customerRepo = new CustomerRepository();
+        RestaurantOrderRepository orderRepo = new RestaurantOrderRepository();
+
+        Customer c1 = Customer.of("+380501112233", "Олена Коваль", "olena@gmail.com");
+        Customer c2 = Customer.of("+380672223344", "Андрій Мельник", "andriy@ukr.net");
+        Customer c3 = Customer.of("+380933334455", "Олена Коваль", "olena.work@gmail.com");
+        Customer c4 = Customer.of("+380504445566", "Богдан Ткаченко", "bohdan@yahoo.com");
+
+        customerRepo.addAll(List.of(c1, c2, c3, c4));
+
+        RestaurantTable table1 = new RestaurantTable(1, 4, TableZone.MAIN_HALL);
+        RestaurantTable table2 = new RestaurantTable(2, 2, TableZone.TERRACE);
+        RestaurantTable table3 = new RestaurantTable(3, 6, TableZone.VIP);
+
+        LocalDate date1 = LocalDate.of(2026, 5, 10);
+        LocalDate date2 = LocalDate.of(2026, 5, 12);
+
+        Reservation r1 = new Reservation(c1, table1, date1, LocalTime.of(18, 0), LocalTime.of(20, 0), 2, ReservationStatus.CONFIRMED);
+        Reservation r2 = new Reservation(c2, table2, date2, LocalTime.of(19, 0), LocalTime.of(21, 0), 2, ReservationStatus.COMPLETED);
+        Reservation r3 = new Reservation(c3, table3, date2, LocalTime.of(17, 0), LocalTime.of(19, 30), 4, ReservationStatus.CONFIRMED);
+        Reservation r4 = new Reservation(c4, table1, date1, LocalTime.of(20, 30), LocalTime.of(22, 0), 3, ReservationStatus.CANCELLED);
+
+        RestaurantOrder o1 = RestaurantOrder.of("ORD-102", r1, 850.50, 50.0);
+        RestaurantOrder o2 = RestaurantOrder.of("ORD-101", r2, 1250.00, 100.0);
+        RestaurantOrder o3 = RestaurantOrder.of("ORD-104", r3, 850.25, 0.0);
+        RestaurantOrder o4 = RestaurantOrder.of("ORD-103", r4, 420.00, 20.0);
+
+        orderRepo.addAll(List.of(o1, o2, o3, o4));
+
+        System.out.println("=== 1. Природний порядок (Comparable) ===");
+        List<RestaurantOrder> naturalOrders = new ArrayList<>(orderRepo.findAll());
+        Collections.sort(naturalOrders);
+        naturalOrders.forEach(o -> System.out.println(o.getOrderId() + " -> " + o.getTotalAmount() + " грн"));
+
+        System.out.println("\n=== 2. Сортування за доменними критеріями ===");
+        System.out.println("Клієнти (ім'я ASC, email DESC):");
+        customerRepo.sortByNameThenEmailDesc()
+                .forEach(c -> System.out.println("  " + c.name() + " | " + c.email()));
+
+        System.out.println("Замовлення (дата DESC, сума ASC):");
+        orderRepo.sortByDateDescThenAmountAsc()
+                .forEach(o -> System.out.println("  " + o.getOrderId() + " | " + o.getReservation().getReservationDate() + " | " + o.getTotalAmount() + " грн"));
+
+        System.out.println("\n=== 3. Сортування за ключем (ASC / DESC) ===");
+        System.out.println("Замовлення за ID (ASC): " + orderRepo.findAllSortedByIdentity(SortOrder.ASC).stream().map(RestaurantOrder::getOrderId).toList());
+        System.out.println("Замовлення за ID (DESC): " + orderRepo.findAllSortedByIdentity(SortOrder.DESC).stream().map(RestaurantOrder::getOrderId).toList());
+        System.out.println("\n=== 4. TreeSet із власним компаратором (не узгодженим з equals) ===");
+        Set<Customer> customersByNameOnly = new TreeSet<>(Comparator.comparing(Customer::name));
+        customersByNameOnly.add(c1);
+        customersByNameOnly.add(c3);
+        System.out.println("Додано 2 різних клієнти з однаковим іменем. Розмір TreeSet: " + customersByNameOnly.size());
+
+        System.out.println("\n=== 5. Пошук через Stream API ===");
+        System.out.println("Пошук клієнтів за ім'ям 'Олена': " + customerRepo.findByNameContaining("Олена").size());
+        System.out.println("Замовлення в діапазоні [850.0, 900.0]: " + orderRepo.findByTotalAmountRange(850.0, 900.0).stream().map(RestaurantOrder::getOrderId).toList());
+        System.out.println("Підтверджені замовлення від 850 грн: " + orderRepo.findByStatusAndMinAmount(ReservationStatus.CONFIRMED, 850.0).stream().map(RestaurantOrder::getOrderId).toList());
+        System.out.println("Топ унікальних доменів клієнтів: " + customerRepo.findTopUniqueEmailDomains(3));
+
+        System.out.println("\n=== 6. Пошук одного об'єкта (Optional без isPresent + get) ===");
+        Optional<Customer> foundGmail = customerRepo.findFirstByEmailDomain("@gmail.com");
+        foundGmail.ifPresentOrElse(
+                c -> System.out.println("Знайдено клієнта з gmail: " + c.name() + " (" + c.email() + ")"),
+                () -> System.out.println("Клієнта з gmail не знайдено")
         );
 
-        RestaurantTable table = new RestaurantTable(
-                15,
-                4,
-                TableZone.TERRACE
-        );
+        Optional<Customer> missingDomain = customerRepo.findFirstByEmailDomain("@nonexistent.org");
+        String fallbackMessage = missingDomain
+                .map(Customer::name)
+                .orElse("Клієнта з таким доменом не існує");
+        System.out.println("Результат пошуку неіснуючого домену: " + fallbackMessage);
 
-        Reservation reservation = new Reservation(
-                customer,
-                table,
-                LocalDate.now(),
-                LocalTime.of(18, 0),
-                LocalTime.of(20, 0),
-                4,
-                ReservationStatus.PENDING
-        );
+        System.out.println("\n=== 7. Групування та агрегація ===");
+        Map<ReservationStatus, List<RestaurantOrder>> byStatus = orderRepo.groupByReservationStatus();
+        byStatus.forEach((status, list) -> System.out.println("  Статус " + status + ": " + list.size() + " замовлень"));
 
-        RestaurantOrder order = RestaurantOrder.of(
-                "ORD-501",
-                reservation,
-                1250.0,
-                150.0
-        );
+        Map<ReservationStatus, Long> countsByStatus = orderRepo.countByReservationStatus();
+        System.out.println("Підрахунок по статусах: " + countsByStatus);
+        System.out.println("Загальна виручка всіх замовлень: " + orderRepo.calculateTotalRevenue() + " грн");
 
-        // 2. Record component access
-        System.out.println("=== RECORD COMPONENTS ===");
-        System.out.println("Customer phone: " + customer.phone());
-        System.out.println("Customer name: " + customer.name());
-        System.out.println("Customer email: " + customer.email());
-        System.out.println("Table number: " + table.tableNumber());
-        System.out.println("Table capacity: " + table.capacity());
-        System.out.println("Table zone: " + table.zone());
-        System.out.println();
-
-        // 3. Enum values(), field and valueOf()
-        System.out.println("=== ENUM ===");
-        System.out.println("Reservation statuses:");
-        for (ReservationStatus status : ReservationStatus.values()) {
-            System.out.println(status);
-        }
-        System.out.println("Terrace price coefficient: " + TableZone.TERRACE.getPriceCoefficient());
-
+        System.out.println("\n=== 8. Повторне використання спожитого стріму ===");
+        Stream<Customer> customerStream = customerRepo.stream();
+        long firstCount = customerStream.count();
+        System.out.println("Перший прохід стріму: " + firstCount + " елементів");
         try {
-            ReservationStatus.valueOf("UNKNOWN");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid enum value: " + e.getMessage());
-        }
-        System.out.println();
-
-        // 4. Switch expressions
-        System.out.println("=== SWITCH EXPRESSIONS ===");
-        System.out.println("Zone description: " + RestaurantUtils.zoneDescription(table.zone()));
-        System.out.println("Available action: " + RestaurantUtils.availableAction(reservation.getStatus()));
-        System.out.println();
-
-        // 5. Invalid record data
-        System.out.println("=== INVALID RECORD DATA ===");
-        try {
-            Customer.of("", "Test", "test@example.com");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid Customer: " + e.getMessage());
+            long secondCount = customerStream.count();
+            System.out.println("Другий прохід стріму: " + secondCount);
+        } catch (IllegalStateException ex) {
+            log.error("Attempted to reuse an already consumed stream", ex);
+            System.out.println("Перехоплено очікувану помилку при повторному використанні стріму: " + ex.getMessage());
         }
 
-        try {
-            new RestaurantTable(0, 4, TableZone.VIP);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid RestaurantTable: " + e.getMessage());
-        }
-        System.out.println();
-
-        // 6. Two equal record objects
-        System.out.println("=== RECORD EQUALS AND HASHCODE ===");
-        Customer sameCustomer = Customer.of(" +380671234567 ", "sofia", "Sofia@EXAMPLE.COM");
-        System.out.println("customer == sameCustomer: " + (customer == sameCustomer));
-        System.out.println("customer.equals(sameCustomer): " + customer.equals(sameCustomer));
-        System.out.println("customer.hashCode(): " + customer.hashCode());
-        System.out.println("sameCustomer.hashCode(): " + sameCustomer.hashCode());
-        System.out.println();
-        // 7. Generated record toString()
-        System.out.println("=== RECORD TOSTRING ===");
-        System.out.println(customer);
-        System.out.println(table);
-        System.out.println();
-
-        // 8. Existing computed methods
-        System.out.println("=== COMPUTED METHODS ===");
-        System.out.println("Reservation duration: " + RestaurantUtils.durationMinutes(reservation) + " minutes");
-        System.out.println("Final order amount: " + RestaurantUtils.formatMoney(RestaurantUtils.finalAmount(order)));
-        System.out.println();
-
-        // 9. Mutable fields in regular classes
-        System.out.println("=== MUTABLE FIELDS ===");
-        reservation.setStatus(ReservationStatus.CONFIRMED);
-        System.out.println("Status after setter: " + reservation.getStatus());
-
-        try {
-            order.setDiscountAmount(2000.0);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid discount: " + e.getMessage());
-        }
-        System.out.println();
-
-        // 10. Loading tables from CSV (Lab 3)
-        System.out.println("=== CSV TABLES ===");
-        TableLoader loader = new TableLoader();
-        List<RestaurantTable> loadedTables = loader.load(Path.of("data", "tables.csv"));
-        System.out.println("Завантажено рядків столиків із CSV: " + loadedTables.size());
-        System.out.println();
-
-        // 11. Loading a missing file (Lab 3)
-        System.out.println("=== MISSING FILE ===");
-        loader.load(Path.of("data", "missing-tables.csv"));
-        System.out.println("Програму не завершено після спроби прочитати відсутній файл.");
-        System.out.println();
-
-        // 12. GenericRepository demonstration (Lab 4)
-        System.out.println("=== РЕПОЗИТОРІЙ 1: КЛІЄНТИ (Customer) ===");
-        GenericRepository<Customer> customerRepo = new GenericRepository<>("Customer", Customer::phone);
-        Customer customer2 = Customer.of("+380509876543", "Andrii", "andrii@example.com");
-
-        customerRepo.add(customer);
-        customerRepo.add(customer2);
-
-        // Пошук: знайдено та не знайдено
-        System.out.println("Пошук наявного клієнта: " + customerRepo.findByIdentity("+380671234567").isPresent());
-        System.out.println("Пошук відсутнього клієнта: " + customerRepo.findByIdentity("+380000000000").isPresent());
-
-        // Дублікат через add() у try/catch поруч із addIfAbsent()
-        Customer duplicateCustomer = Customer.of("+380671234567", "Інша Софія", "other@example.com");
-        try {
-            customerRepo.add(duplicateCustomer);
-        } catch (DuplicateIdentityException e) {
-            System.out.println("Спіймано виключення при add(): " + e.getMessage());
-        }
-        boolean addedIfAbsent = customerRepo.addIfAbsent(duplicateCustomer);
-        System.out.println("Результат addIfAbsent() для дубліката: " + addedIfAbsent);
-
-        // Видалення наявного та відсутнього елемента
-        System.out.println("Видалення наявного клієнта: " + customerRepo.removeByIdentity("+380509876543"));
-        System.out.println("Видалення відсутнього клієнта: " + customerRepo.removeByIdentity("+380509876543"));
-        System.out.println("Усього клієнтів у репозиторії: " + customerRepo.findAll().size());
-        System.out.println();
-
-        System.out.println("=== РЕПОЗИТОРІЙ 2: СТОЛИКИ (RestaurantTable + CSV) ===");
-        GenericRepository<RestaurantTable> tableRepo =
-                new GenericRepository<>("RestaurantTable", t -> String.valueOf(t.tableNumber()));
-
-        // Додавання з CSV (де є дублікат столика №1)
-        for (RestaurantTable t : loadedTables) {
-            try {
-                tableRepo.add(t);
-            } catch (DuplicateIdentityException e) {
-                System.out.println("Дублікат із CSV при add(): " + e.getMessage());
-            }
-        }
-        tableRepo.addIfAbsent(table);
-        // Пошук: знайдено та не знайдено
-        System.out.println("Пошук столика №15: " + tableRepo.findByIdentity("15").isPresent());
-        System.out.println("Пошук столика №999: " + tableRepo.findByIdentity("999").isPresent());
-
-        // Видалення наявного та відсутнього елемента
-        System.out.println("Видалення столика №2: " + tableRepo.removeByIdentity("2"));
-        System.out.println("Повторне видалення столика №2: " + tableRepo.removeByIdentity("2"));
-        System.out.println();
-
-        System.out.println("=== РЕПОЗИТОРІЙ 3: ЗАМОВЛЕННЯ (RestaurantOrder) ===");
-        GenericRepository<RestaurantOrder> orderRepo =
-                new GenericRepository<>("RestaurantOrder", RestaurantOrder::getOrderId);
-
-        orderRepo.add(order);
-        RestaurantOrder order2 = RestaurantOrder.of("ORD-502", reservation, 800.0, 0.0);
-        orderRepo.addAll(List.of(order2));
-
-        // Пошук: знайдено та не знайдено
-        System.out.println("Пошук замовлення ORD-501: " + orderRepo.findByIdentity("ORD-501").isPresent());
-        System.out.println("Пошук замовлення ORD-999: " + orderRepo.findByIdentity("ORD-999").isPresent());
-
-        // Дублікат: add() vs addIfAbsent()
-        try {
-            orderRepo.add(order);
-        } catch (DuplicateIdentityException e) {
-            System.out.println("Спіймано виключення при add(): " + e.getMessage());
-        }
-        System.out.println("Результат addIfAbsent() для дубліката замовлення: " + orderRepo.addIfAbsent(order));
-
-        // Видалення наявного та відсутнього елемента
-        System.out.println("Видалення ORD-502: " + orderRepo.removeByIdentity("ORD-502"));
-        System.out.println("Видалення відсутнього ORD-777: " + orderRepo.removeByIdentity("ORD-777"));
+        log.info("Completed Lab 5 demonstration");
     }
 }

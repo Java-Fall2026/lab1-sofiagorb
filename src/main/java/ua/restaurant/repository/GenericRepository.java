@@ -7,10 +7,12 @@ import ua.restaurant.exception.DuplicateIdentityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class GenericRepository<T> {
 
@@ -31,6 +33,10 @@ public class GenericRepository<T> {
         }
         this.name = name;
         this.extractor = extractor;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void add(T item) {
@@ -103,9 +109,42 @@ public class GenericRepository<T> {
         return Collections.unmodifiableList(new ArrayList<>(storage.values()));
     }
 
+    public Stream<T> stream() {
+        return storage.values().stream();
+    }
+    public List<T> findAllSorted(Comparator<T> comparator) {
+        if (comparator == null) {
+            log.error("Comparator must not be null in repository '{}'", name);
+            throw new IllegalArgumentException("Comparator must not be null");
+        }
+        List<T> sorted = storage.values().stream()
+                .sorted(comparator)
+                .toList();
+        log.info("Sorted {} items in repository '{}' using custom comparator", sorted.size(), name);
+        return sorted;
+    }
+
+   public List<T> findAllSortedByIdentity(SortOrder order) {
+        if (order == null) {
+            log.error("SortOrder must not be null in repository '{}'", name);
+            throw new IllegalArgumentException("SortOrder must not be null");
+        }
+        var comparator = Map.Entry.<String, T>comparingByKey();
+        if (order == SortOrder.DESC) {
+            comparator = comparator.reversed();
+        }
+        List<T> sorted = storage.entrySet().stream()
+                .sorted(comparator)
+                .map(Map.Entry::getValue)
+                .toList();
+        log.info("Sorted {} items by identity ({}) in repository '{}'", sorted.size(), order, name);
+        return sorted;
+    }
+
     public int size() {
         return storage.size();
     }
+
     private String validateAndExtractId(T item) {
         if (item == null) {
             log.error("Null item passed to repository '{}'", name);
