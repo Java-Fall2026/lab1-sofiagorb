@@ -122,10 +122,17 @@ class DomainRepositoryStreamTest {
     }
 
     @Test
-    @DisplayName("Range search excludes values outside boundaries")
-    void rangeSearchExcludesOutsideValues() {
-        List<RestaurantOrder> inRange = orderRepo.findByTotalAmountRange(850.00, 900.00);
-        assertEquals(List.of(o3, o1), inRange);
+    @DisplayName("Order amount range search includes exact boundary values and excludes outside values")
+    void rangeSearchIncludesExactBoundariesAndExcludesOutsideValues() {
+        List<RestaurantOrder> exactBoundaries = orderRepo.findByTotalAmountRange(850.25, 850.50);
+        assertEquals(List.of(o3, o1), exactBoundaries);
+    }
+
+    @Test
+    @DisplayName("Customer phone range search includes exact boundaries and excludes outside values")
+    void customerPhoneRangeSearchIncludesExactBoundaries() {
+        List<Customer> inRange = customerRepo.findByPhoneRange("+380501112233", "+380672223344");
+        assertEquals(List.of(c1, c2), inRange);
     }
 
     @Test
@@ -133,6 +140,26 @@ class DomainRepositoryStreamTest {
     void combinedSearchRequiresBothConditions() {
         List<RestaurantOrder> matched = orderRepo.findByStatusAndMinAmount(ReservationStatus.CONFIRMED, 850.40);
         assertEquals(List.of(o1), matched);
+    }
+
+    @Test
+    @DisplayName("Customer combined search by name and email domain requires both conditions")
+    void customerCombinedSearchByNameAndEmailDomainRequiresBothConditions() {
+        List<Customer> matched = customerRepo.findByNameAndEmailDomain("olena", "@gmail.com");
+        assertEquals(List.of(c1, c3), matched);
+
+        List<Customer> noMatch = customerRepo.findByNameAndEmailDomain("olena", "@ukr.net");
+        assertTrue(noMatch.isEmpty());
+    }
+
+    @Test
+    @DisplayName("findTopUniqueEmailDomains returns sorted distinct domains limited to N")
+    void findTopUniqueEmailDomainsReturnsSortedDistinctDomains() {
+        List<String> allUnique = customerRepo.findTopUniqueEmailDomains(5);
+        assertEquals(List.of("gmail.com", "ukr.net"), allUnique);
+
+        List<String> topOne = customerRepo.findTopUniqueEmailDomains(1);
+        assertEquals(List.of("gmail.com"), topOne);
     }
 
     @Test
