@@ -66,6 +66,10 @@ public class Main {
         naturalOrders.forEach(o -> System.out.println(o.getOrderId() + " -> " + o.getTotalAmount() + " грн"));
 
         System.out.println("\n=== 2. Сортування за доменними критеріями ===");
+        System.out.println("Клієнти (ім'я ASC):");
+        customerRepo.sortByNameAsc()
+                .forEach(c -> System.out.println("  " + c.name() + " | " + c.phone() + " | " + c.email()));
+
         System.out.println("Клієнти (ім'я ASC, email DESC):");
         customerRepo.sortByNameThenEmailDesc()
                 .forEach(c -> System.out.println("  " + c.name() + " | " + c.email()));
@@ -73,10 +77,10 @@ public class Main {
         System.out.println("Замовлення (дата DESC, сума ASC):");
         orderRepo.sortByDateDescThenAmountAsc()
                 .forEach(o -> System.out.println("  " + o.getOrderId() + " | " + o.getReservation().getReservationDate() + " | " + o.getTotalAmount() + " грн"));
-
-        System.out.println("\n=== 3. Сортування за ключем (ASC / DESC) ===");
+                System.out.println("\n=== 3. Сортування за ключем (ASC / DESC) ===");
         System.out.println("Замовлення за ID (ASC): " + orderRepo.findAllSortedByIdentity(SortOrder.ASC).stream().map(RestaurantOrder::getOrderId).toList());
         System.out.println("Замовлення за ID (DESC): " + orderRepo.findAllSortedByIdentity(SortOrder.DESC).stream().map(RestaurantOrder::getOrderId).toList());
+
         System.out.println("\n=== 4. TreeSet із власним компаратором (не узгодженим з equals) ===");
         Set<Customer> customersByNameOnly = new TreeSet<>(Comparator.comparing(Customer::name));
         customersByNameOnly.add(c1);
@@ -84,8 +88,20 @@ public class Main {
         System.out.println("Додано 2 різних клієнти з однаковим іменем. Розмір TreeSet: " + customersByNameOnly.size());
 
         System.out.println("\n=== 5. Пошук через Stream API ===");
-        System.out.println("Пошук клієнтів за ім'ям 'Олена': " + customerRepo.findByNameContaining("Олена").size());
-        System.out.println("Замовлення в діапазоні [850.0, 900.0]: " + orderRepo.findByTotalAmountRange(850.0, 900.0).stream().map(RestaurantOrder::getOrderId).toList());
+        List<Customer> foundByName = customerRepo.findByNameContaining("Олена");
+        System.out.println("Пошук клієнтів за ім'ям 'Олена' (" + foundByName.size() + "):");
+        foundByName.forEach(c -> System.out.println("  " + c.name() + " | " + c.phone() + " | " + c.email()));
+
+        List<Customer> foundByPhoneRange = customerRepo.findByPhoneRange("+380501112233", "+380672223344");
+        System.out.println("Клієнти в діапазоні телефонів [+380501112233, +380672223344]:");
+        foundByPhoneRange.forEach(c -> System.out.println("  " + c.name() + " | " + c.phone()));
+
+        List<Customer> foundByNameAndDomain = customerRepo.findByNameAndEmailDomain("Олена", "@gmail.com");
+        System.out.println("Клієнти з ім'ям 'Олена' та доменом '@gmail.com':");
+        foundByNameAndDomain.forEach(c -> System.out.println("  " + c.name() + " | " + c.email()));
+
+        System.out.println("Замовлення клієнтів з ім'ям 'Олена': " + orderRepo.findByCustomerNameContaining("Олена").stream().map(RestaurantOrder::getOrderId).toList());
+        System.out.println("Замовлення в діапазоні [850.25, 850.50]: " + orderRepo.findByTotalAmountRange(850.25, 850.50).stream().map(RestaurantOrder::getOrderId).toList());
         System.out.println("Підтверджені замовлення від 850 грн: " + orderRepo.findByStatusAndMinAmount(ReservationStatus.CONFIRMED, 850.0).stream().map(RestaurantOrder::getOrderId).toList());
         System.out.println("Топ унікальних доменів клієнтів: " + customerRepo.findTopUniqueEmailDomains(3));
 
