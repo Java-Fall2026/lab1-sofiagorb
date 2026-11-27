@@ -1,43 +1,48 @@
 package ua.restaurant.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import ua.common.BaseEntity;
 import ua.restaurant.util.RestaurantUtils;
+import ua.restaurant.validation.ValidDiscount;
 
 import java.util.Objects;
 
+@ValidDiscount
 public class RestaurantOrder extends BaseEntity implements Comparable<RestaurantOrder> {
 
+    @NotBlank(message = "Ідентифікатор замовлення не може бути порожнім")
+    @Pattern(regexp = "^ORD-\\d+$", message = "Ідентифікатор замовлення має відповідати формату ORD-XXX")
     private final String orderId;
+
+    @NotNull(message = "Бронювання для замовлення є обов'язковим")
+    @Valid
     private final Reservation reservation;
+
+    @Positive(message = "Загальна сума замовлення має бути більшою за 0")
     private final double totalAmount;
+
+    @PositiveOrZero(message = "Сума знижки не може бути від'ємною")
     private double discountAmount;
 
+    @JsonCreator
     private RestaurantOrder(
-            String orderId,
-            Reservation reservation,
-            double totalAmount,
-            double discountAmount
+            @JsonProperty("orderId") String orderId,
+            @JsonProperty("reservation") Reservation reservation,
+            @JsonProperty("totalAmount") double totalAmount,
+            @JsonProperty("discountAmount") double discountAmount
     ) {
         super();
-
-        this.orderId = RestaurantUtils.normalizeUpperCase(
-                RestaurantUtils.requireNotBlank(orderId, "Order ID")
-        );
-
-        this.reservation = RestaurantUtils.requireNotNull(
-                reservation, "Reservation"
-        );
-
-        if (totalAmount < 0) {
-            throw new IllegalArgumentException(
-                    "Total amount must be greater than or equal to 0, got: "
-                            + totalAmount
-            );
-        }
-
+        this.orderId = orderId == null ? null : RestaurantUtils.normalizeUpperCase(orderId);
+        this.reservation = reservation;
         this.totalAmount = totalAmount;
-
-        setDiscountAmount(discountAmount);
+        this.discountAmount = discountAmount;
     }
 
     public static RestaurantOrder of(
@@ -46,12 +51,7 @@ public class RestaurantOrder extends BaseEntity implements Comparable<Restaurant
             double totalAmount,
             double discountAmount
     ) {
-        return new RestaurantOrder(
-                orderId,
-                reservation,
-                totalAmount,
-                discountAmount
-        );
+        return new RestaurantOrder(orderId, reservation, totalAmount, discountAmount);
     }
 
     public String getOrderId() {
@@ -70,14 +70,7 @@ public class RestaurantOrder extends BaseEntity implements Comparable<Restaurant
         return discountAmount;
     }
 
-    public final void setDiscountAmount(double discountAmount) {
-        if (discountAmount < 0 || discountAmount > totalAmount) {
-            throw new IllegalArgumentException(
-                    "Discount amount must be between 0 and "
-                            + totalAmount + ", got: " + discountAmount
-            );
-        }
-
+    public void setDiscountAmount(double discountAmount) {
         this.discountAmount = discountAmount;
     }
 
@@ -87,7 +80,19 @@ public class RestaurantOrder extends BaseEntity implements Comparable<Restaurant
         if (byAmount != 0) {
             return byAmount;
         }
-        return this.orderId.compareTo(other.orderId);
+        return Objects.compare(this.orderId, other.orderId, ComparatorNullSafe.INSTANCE);
+    }
+
+    private enum ComparatorNullSafe implements java.util.Comparator<String> {
+        INSTANCE;
+
+        @Override
+        public int compare(String a, String b) {
+            if (a == b) return 0;
+            if (a == null) return -1;
+            if (b == null) return 1;
+            return a.compareTo(b);
+        }
     }
 
     @Override
@@ -95,13 +100,11 @@ public class RestaurantOrder extends BaseEntity implements Comparable<Restaurant
         if (this == o) {
             return true;
         }
-
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         RestaurantOrder that = (RestaurantOrder) o;
-        return orderId.equals(that.orderId);
+        return Objects.equals(orderId, that.orderId);
     }
 
     @Override

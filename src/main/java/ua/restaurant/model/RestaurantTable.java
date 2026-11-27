@@ -1,33 +1,19 @@
 package ua.restaurant.model;
 
-import ua.restaurant.util.RestaurantUtils;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 public record RestaurantTable(
+        @Min(value = 1, message = "Номер столика має бути не менше 1")
+        @Max(value = 200, message = "Номер столика не може перевищувати 200")
         int tableNumber,
+
+        @Min(value = 1, message = "Місткість столика має бути не менше 1")
+        @Max(value = 20, message = "Місткість столика не може перевищувати 20")
         int capacity,
+
+        @NotNull(message = "Зона столика є обов'язковою")
         TableZone zone
 ) {
-
-    static final int MIN_TABLE_NUMBER = 1;
-    static final int MAX_TABLE_NUMBER = 200;
-    static final int MIN_CAPACITY = 1;
-    static final int MAX_CAPACITY = 20;
-
-    public RestaurantTable {
-        tableNumber = RestaurantUtils.requireInRange(
-                tableNumber,
-                MIN_TABLE_NUMBER,
-                MAX_TABLE_NUMBER,
-                "Table number"
-        );
-
-        capacity = RestaurantUtils.requireInRange(
-                capacity,
-                MIN_CAPACITY,
-                MAX_CAPACITY,
-                "Capacity"
-        );
-
-        zone = RestaurantUtils.requireNotNull(zone, "Zone");
-    }
 }

@@ -1,0 +1,191 @@
+- orderId: "ORD-101"
+  reservation:
+    customer: { phone: "+380501112233", name: "Олена Коваль", email: "olena.koval@gmail.com" }
+    table: { tableNumber: 1, capacity: 4, zone: "MAIN_HALL" }
+    reservationDate: "2026-11-02"
+    startTime: "18:00:00"
+    endTime: "20:00:00"
+    guestCount: 2
+    status: "CONFIRMED"
+  totalAmount: 850.50
+  discountAmount: 50.00
+
+- orderId: "ORD-102"
+  reservation:
+    customer: { phone: "+380672223344", name: "Андрій Мельник", email: "andriy.melnyk@ukr.net" }
+    table: { tableNumber: 2, capacity: 2, zone: "TERRACE" }
+    reservationDate: "2026-11-03"
+    startTime: "19:00:00"
+    endTime: "21:00:00"
+    guestCount: 2
+    status: "COMPLETED"
+  totalAmount: 1250.00
+  discountAmount: 100.00
+
+- orderId: "ORD-103"
+  reservation:
+    customer: { phone: "+380933334455", name: "Марія Шевченко", email: "maria.shevchenko@gmail.com" }
+    table: { tableNumber: 3, capacity: 6, zone: "VIP" }
+    reservationDate: "2026-11-04"
+    startTime: "17:00:00"
+    endTime: "19:30:00"
+    guestCount: 4
+    status: "CONFIRMED"
+  totalAmount: 2400.00
+  discountAmount: 200.00
+
+- orderId: "ORD-104"
+  reservation:
+    customer: { phone: "+380504445566", name: "Богдан Ткаченко", email: "bohdan.tkachenko@yahoo.com" }
+    table: { tableNumber: 4, capacity: 4, zone: "MAIN_HALL" }
+    reservationDate: "2026-11-05"
+    startTime: "14:00:00"
+    endTime: "16:00:00"
+    guestCount: 3
+    status: "COMPLETED"
+  totalAmount: 640.00
+  discountAmount: 0.00
+
+- orderId: "ORD-105"
+  reservation:
+    customer: { phone: "+380635556677", name: "Ірина Бондаренко", email: "iryna.bond@ukr.net" }
+    table: { tableNumber: 5, capacity: 2, zone: "BAR" }
+    reservationDate: "2026-11-06"
+    startTime: "20:00:00"
+    endTime: "22:00:00"
+    guestCount: 2
+    status: "PENDING"
+  totalAmount: 520.00
+  discountAmount: 20.00
+
+- orderId: "ORD-106"
+  reservation:
+    customer: { phone: "+380976667788", name: "Тарас Кравченко", email: "taras.krav@gmail.com" }
+    table: { tableNumber: 6, capacity: 8, zone: "VIP" }
+    reservationDate: "2026-11-07"
+    startTime: "18:30:00"
+    endTime: "21:30:00"
+    guestCount: 6
+    status: "CONFIRMED"
+  totalAmount: 3600.00
+  discountAmount: 350.00
+
+- orderId: "ORD-107"
+  reservation:
+    customer: { phone: "+380667778899", name: "Наталія Олійник", email: "nataliia.oliinyk@outlook.com" }
+    table: { tableNumber: 7, capacity: 4, zone: "TERRACE" }
+    reservationDate: "2026-11-08"
+    startTime: "13:00:00"
+    endTime: "15:00:00"
+    guestCount: 4
+    status: "COMPLETED"
+  totalAmount: 980.00
+  discountAmount: 80.00
+
+- orderId: "ORD-108"
+  reservation:
+    customer: { phone: "+380958889900", name: "Дмитро Поліщук", email: "dmytro.polishchuk@gmail.com" }
+    table: { tableNumber: 8, capacity: 4, zone: "MAIN_HALL" }
+    reservationDate: "2026-11-09"
+    startTime: "19:00:00"
+    endTime: "21:00:00"
+    guestCount: 3
+    status: "SEATED"
+  totalAmount: 1120.50
+  discountAmount: 0.00
+
+- orderId: "ORD-109"
+  reservation:
+    customer: { phone: "+380689990011", name: "Софія Мороз", email: "sofiia.moroz@ukr.net" }
+    table: { tableNumber: 9, capacity: 2, zone: "BAR" }
+    reservationDate: "2026-11-10"
+    startTime: "16:00:00"
+    endTime: "18:00:00"
+    guestCount: 1
+    status: "CANCELLED"
+  totalAmount: 310.00
+  discountAmount: 10.00
+
+- orderId: "ORD-110"
+  reservation:
+    customer: { phone: "+380731010101", name: "Максим Лисенко", email: "maksym.lysenko@gmail.com" }
+    table: { tableNumber: 10, capacity: 6, zone: "MAIN_HALL" }
+    reservationDate: "2026-11-11"
+    startTime: "18:00:00"
+    endTime: "20:30:00"
+    guestCount: 5
+    status: "CONFIRMED"
+  totalAmount: 1890.00
+  discountAmount: 150.00
+
+- orderId: "ORD-111"
+  reservation:
+    customer: { phone: "+380502020202", name: "Катерина Савченко", email: "kateryna.sav@yahoo.com" }
+    table: { tableNumber: 11, capacity: 4, zone: "TERRACE" }
+    reservationDate: "2026-11-12"
+    startTime: "15:00:00"
+    endTime: "17:00:00"
+    guestCount: 2
+    status: "COMPLETED"
+  totalAmount: 740.00
+  discountAmount: 40.00
+
+- orderId: "ORD-112"
+  reservation:
+    customer: { phone: "+380673030303", name: "Олександр Руденко", email: "oleksandr.rudenko@gmail.com" }
+    table: { tableNumber: 12, capacity: 4, zone: "MAIN_HALL" }
+    reservationDate: "2026-11-13"
+    startTime: "19:30:00"
+    endTime: "21:30:00"
+    guestCount: 4
+    status: "CONFIRMED"
+  totalAmount: 1450.00
+  discountAmount: 50.00
+
+- orderId: ""
+  reservation:
+    customer: { phone: "+380501112233", name: "Олена Коваль", email: "olena.koval@gmail.com" }
+    table: { tableNumber: 1, capacity: 4, zone: "MAIN_HALL" }
+    reservationDate: "2026-11-14"
+    startTime: "18:00:00"
+    endTime: "20:00:00"
+    guestCount: 2
+    status: "CONFIRMED"
+  totalAmount: 500.00
+  discountAmount: 0.00
+
+- orderId: "ORD-114"
+  reservation:
+    customer: { phone: "+380672223344", name: "Андрій Мельник", email: "andriy.melnyk@ukr.net" }
+    table: { tableNumber: 2, capacity: 2, zone: "TERRACE" }
+    reservationDate: "2026-11-15"
+    startTime: "18:00:00"
+    endTime: "20:00:00"
+    guestCount: 2
+    status: "CONFIRMED"
+  totalAmount: -150.00
+  discountAmount: 0.00
+
+- orderId: "ORD-115"
+  reservation:
+    customer: { phone: "+380933334455", name: "Марія Шевченко", email: "maria.shevchenko@gmail.com" }
+    table: { tableNumber: 3, capacity: 6, zone: "VIP" }
+    reservationDate: "2026-11-16"
+    startTime: "18:00:00"
+    endTime: "20:00:00"
+    guestCount: 3
+    status: "CONFIRMED"
+  totalAmount: 400.00
+  discountAmount: 600.00
+
+- orderId: "ORD-101"
+  reservation:
+    customer: { phone: "+380501112233", name: "Олена Коваль", email: "olena.koval@gmail.com" }
+    table: { tableNumber: 1, capacity: 4, zone: "MAIN_HALL" }
+    reservationDate: "2026-11-02"
+    startTime: "18:00:00"
+    endTime: "20:00:00"
+    guestCount: 2
+    status: "CONFIRMED"
+  totalAmount: 850.50
+  discountAmount: 50.00

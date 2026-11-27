@@ -1,7 +1,11 @@
 package ua.restaurant.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import ua.common.BaseEntity;
-import ua.restaurant.util.RestaurantUtils;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -9,70 +13,47 @@ import java.util.Objects;
 
 public class Reservation extends BaseEntity {
 
-    static final int MIN_GUEST_COUNT = 1;
-
+    @NotNull(message = "Клієнт бронювання є обов'язковим")
+    @Valid
     private final Customer customer;
+
+    @NotNull(message = "Столик бронювання є обов'язковим")
+    @Valid
     private final RestaurantTable table;
+
+    @NotNull(message = "Дата бронювання є обов'язковою")
     private final LocalDate reservationDate;
+
+    @NotNull(message = "Час початку бронювання є обов'язковим")
     private final LocalTime startTime;
+
+    @NotNull(message = "Час завершення бронювання є обов'язковим")
     private final LocalTime endTime;
+
+    @Min(value = 1, message = "Кількість гостей має бути щонайменше 1")
     private final int guestCount;
+
+    @NotNull(message = "Статус бронювання є обов'язковим")
     private ReservationStatus status;
 
+    @JsonCreator
     public Reservation(
-            Customer customer,
-            RestaurantTable table,
-            LocalDate reservationDate,
-            LocalTime startTime,
-            LocalTime endTime,
-            int guestCount,
-            ReservationStatus status
+            @JsonProperty("customer") Customer customer,
+            @JsonProperty("table") RestaurantTable table,
+            @JsonProperty("reservationDate") LocalDate reservationDate,
+            @JsonProperty("startTime") LocalTime startTime,
+            @JsonProperty("endTime") LocalTime endTime,
+            @JsonProperty("guestCount") int guestCount,
+            @JsonProperty("status") ReservationStatus status
     ) {
         super();
-
-        this.customer = RestaurantUtils.requireNotNull(
-                customer, "Customer"
-        );
-
-        this.table = RestaurantUtils.requireNotNull(
-                table, "Table"
-        );
-
-        this.reservationDate = RestaurantUtils.requireNotNull(
-                reservationDate, "Reservation date"
-        );
-
-        this.startTime = RestaurantUtils.requireNotNull(
-                startTime, "Start time"
-        );
-
-        this.endTime = RestaurantUtils.requireNotNull(
-                endTime, "End time"
-        );
-
-        if (!endTime.isAfter(startTime)) {
-            throw new IllegalArgumentException(
-                    "End time must be later than start time, got: "
-                            + endTime
-            );
-        }
-
-        if (guestCount < MIN_GUEST_COUNT
-                || guestCount > table.capacity()) {
-
-            throw new IllegalArgumentException(
-                    "Guest count must be between "
-                            + MIN_GUEST_COUNT
-                            + " and "
-                            + table.capacity()
-                            + ", got: "
-                            + guestCount
-            );
-        }
-
+        this.customer = customer;
+        this.table = table;
+        this.reservationDate = reservationDate;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.guestCount = guestCount;
-
-        setStatus(status);
+        this.status = status;
     }
 
     public Customer getCustomer() {
@@ -103,11 +84,8 @@ public class Reservation extends BaseEntity {
         return status;
     }
 
-    public final void setStatus(ReservationStatus status) {
-        this.status = RestaurantUtils.requireNotNull(
-                status,
-                "Status"
-        );
+    public void setStatus(ReservationStatus status) {
+        this.status = Objects.requireNonNull(status, "Status must not be null");
     }
 
     @Override
@@ -115,27 +93,19 @@ public class Reservation extends BaseEntity {
         if (this == o) {
             return true;
         }
-
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         Reservation that = (Reservation) o;
-
-        return customer.equals(that.customer)
-                && table.equals(that.table)
-                && reservationDate.equals(that.reservationDate)
-                && startTime.equals(that.startTime);
+        return Objects.equals(customer, that.customer)
+                && Objects.equals(table, that.table)
+                && Objects.equals(reservationDate, that.reservationDate)
+                && Objects.equals(startTime, that.startTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(
-                customer,
-                table,
-                reservationDate,
-                startTime
-        );
+        return Objects.hash(customer, table, reservationDate, startTime);
     }
 
     @Override

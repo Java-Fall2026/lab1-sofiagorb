@@ -1,0 +1,18 @@
+[
+  { "phone": "+380501112233", "name": "Олена Коваль", "email": "olena.koval@gmail.com" },
+  { "phone": "+380672223344", "name": "Андрій Мельник", "email": "andriy.melnyk@ukr.net" },
+  { "phone": "+380933334455", "name": "Марія Шевченко", "email": "maria.shevchenko@gmail.com" },
+  { "phone": "+380504445566", "name": "Богдан Ткаченко", "email": "bohdan.tkachenko@yahoo.com" },
+  { "phone": "+380635556677", "name": "Ірина Бондаренко", "email": "iryna.bond@ukr.net" },
+  { "phone": "+380976667788", "name": "Тарас Кравченко", "email": "taras.krav@gmail.com" },
+  { "phone": "+380667778899", "name": "Наталія Олійник", "email": "nataliia.oliinyk@outlook.com" },
+  { "phone": "+380958889900", "name": "Дмитро Поліщук", "email": "dmytro.polishchuk@gmail.com" },
+  { "phone": "+380689990011", "name": "Софія Мороз", "email": "sofiia.moroz@ukr.net" },
+  { "phone": "+380731010101", "name": "Максим Лисенко", "email": "maksym.lysenko@gmail.com" },
+  { "phone": "+380502020202", "name": "Катерина Савченко", "email": "kateryna.sav@yahoo.com" },
+  { "phone": "+380673030303", "name": "Олександр Руденко", "email": "oleksandr.rudenko@gmail.com" },
+  { "phone": "+380504040404", "name": "", "email": "empty.name@gmail.com" },
+  { "phone": "12345", "name": "Невірний Телефон", "email": "bad.phone@gmail.com" },
+  { "phone": "+380935050505", "name": "Невірна Пошта", "email": "invalid-email-format" },
+  { "phone": "+380501112233", "name": "Олена Коваль Дублікат", "email": "olena.dup@gmail.com" }
+]
