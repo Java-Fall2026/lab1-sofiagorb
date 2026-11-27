@@ -1,0 +1,8 @@
+tableNumber,capacity,zone
+1,4,MAIN_HALL
+2,2,TERRACE
+invalid,4,VIP
+5,25,BAR
+6,6,UNKNOWN_ZONE
+3,8,VIP
+1,6,TERRACE
